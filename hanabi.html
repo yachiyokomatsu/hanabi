@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>花火</title>
+</head>
+<body>
+ <canvas id="can"></canvas>
+ <style>
+    canvas
+    {
+      background-image: url("yakei15.png");
+    }
+
+  </style>
+  <p><button onclick="start()"id="btn">スタート</button></p>
+
+ <script>
+const SCREEN_W =900;
+const SCREEN_H =700;
+const COLOR =["blue","red","yellow","green","orange"];
+
+let can = document.getElementById("can");
+let con = can.getContext("2d");
+
+
+can.width = SCREEN_W;
+can.height = SCREEN_H;
+
+let se = [
+	new Audio("cursor1.mp3"),
+	new Audio("cursor2.mp3"),
+];
+
+//効果音を鳴らす
+function playSE( n )
+{
+    se[n].currentTime=0;
+	//se[n].pause();
+	se[n].play(se[n],0);
+    se[n].play(se[n],1);
+	//se[n].loop = true;
+}
+
+setInterval(meilLoop,1000/60);
+
+function rand(min,max)
+{
+    return Math.floor((Math.random()*(max-min+1))+min);
+}
+
+class Zanzo
+ {
+     constructor(x,y)
+     {
+         this.x =x;
+         this.y =y;
+         this.c =10;
+         this.kill=false;
+     }
+     update()
+     {
+        if(this.kill)return;
+        if(--this.c==0)this.kill=true;
+
+     }
+     draw()
+     {
+        if(this.kill)return;
+        con.globalAlpha= 1.0* this.c/10;
+        con.fillStyle =COLOR[rand(0,COLOR.length)];
+        if(this.c==5)
+        {
+            con.fillStyle ="blue";
+        }
+        con.fillRect(this.x>>8,this.y>>8,2,3);
+     }
+ }
+
+
+class Hanabi
+{
+    constructor(x,y,vx,vy,gv,hp) {
+        this.x = x<<8;
+        this.y = y<<8;
+        this.vx = vx;
+        this.vy = vy;
+        this.gv = gv;
+        this.kill =false;
+        if(hp==undefined)
+        {
+            this.hp =200;
+            this.type =0;
+            playSE(1);
+        }
+        else
+        {
+            this.hp=hp;
+            this.type =1;
+            playSE(0);
+        }
+
+    }
+    update() {
+        if(this.kill)return;
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vy += this.gv;
+
+        if(this.y>>8 > SCREEN_H) this.kill = true;
+        if(this.type ==0)
+        {
+            if(this.vy>0)
+            {
+                this.kill = true;
+                for(let i=0;i<300;i++)
+                {
+                    let r = rand(0,180);
+                    let s = rand(10,300);
+                    let vx =Math.cos(r*Math.PI/90)*s;
+                    let vy =Math.sin(r*Math.PI/90)*s;
+                    hanabi.push(
+                    new Hanabi(this.x>>8,this.y>>8,vx,vy,1,100));
+
+
+                }
+            }
+        }
+        else
+        {
+            if(--this.hp==0)this.kill=true;
+        }
+         if(this.hp==100)
+        {
+            con.fillStyle ="blue";
+        }
+    }
+    draw() {
+        if(this.kill) return;
+        con.globalAlpha= 1.0;
+        if(this.hp==0)
+        {
+        con.fillStyle ="yellow";
+        }
+        else if(this.hp==100){
+             con.fillStyle =COLOR[rand(0,COLOR.length)];
+
+       }
+        con.fillRect  (this.x>>8, this.y>>8,2,2);
+        hanabi.push(new Zanzo(this.x,this.y));
+    }
+
+}
+
+class Hana
+{
+    constructor(x,y,vx,vy,gv,hp,col) {
+        this.x = x<<8;
+        this.y = y<<8;
+        this.vx = vx;
+        this.vy = vy;
+        this.gv = gv;
+        this.kill =false;
+        this.hp =100;
+        this.type=1;
+        }
+    update() {
+        if(this.kill)return;
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vy += this.gv;
+
+
+        if(this.y>>8 > SCREEN_H) this.kill = true;
+        if(this.type ==1)
+        {
+            if(this.vy>0)
+            {
+                this.kill = true;
+                for(let i=0;i<300;i++)
+                {
+                    let r = rand(180,90);
+                    let s = rand(10,300);
+                    let vx =Math.cos(r*Math.PI/90)*s;
+                    let vy =Math.sin(r*Math.PI/90)*s;
+                    hanabi.push(
+                    new Hanabi(this.x>>8,this.y>>8,vx,vy,1,100));
+
+                }
+            }
+
+        }
+        else
+        {
+            if(--this.hp==0)this.kill=true;
+        }
+    }
+    draw() {
+        if(this.kill) return;
+        con.globalAlpha= 1.0;
+        con.fillStyle =COLOR[rand(0,COLOR.length)];
+        con.fillStyle ="yellow";
+        con.fillRect  (this.x>>8, this.y>>8,3,6);
+        hana.push(new Zanzo(this.x,this.y));
+    }
+}
+//花火の配列
+let hanabi =[];
+let hana=[];
+let zanzo  =[];
+
+//更新処理
+function update()
+{
+
+    for(let i = hanabi.length-1;i>=0;i-- )
+    {
+        hanabi[i].update();
+        if(hanabi[i].kill) hanabi.splice(i,1);
+    }
+    for(let i = hana.length-1;i>=0;i-- )
+    {
+        hana[i].update();
+        if(hana[i].kill) hana.splice(i,2);
+    }
+    for(let i = zanzo.length-1;i>=0;i-- )
+    {
+        zanzo[i].update();
+        if(zanzo[i].kill) zanzo.splice(i,1);
+    }
+
+}
+
+//描画処理
+function draw()
+{
+    //con.fillStyle="";
+    //con.fillRect(0,0,SCREEN_W,SCREEN_H);
+
+    for(let i = zanzo.length-1;i>=0;i-- )
+    {
+        zanzo[i].draw();
+    }
+
+    for(let i = hanabi.length-1;i>=0;i-- )
+    {
+        hanabi[i].draw();
+    }
+    for(let i = hana.length-1;i>=0;i-- )
+    {
+        hana[i].draw();
+    }
+}
+
+function meilLoop()
+{
+    con.clearRect(0,0,SCREEN_W,SCREEN_H);
+    update();
+    draw();
+}
+//ボタンの要素
+let btn =document.getElementById("btn");
+
+//スタートボタン
+function start()
+{
+    //playSE(0);
+
+    hanabi.push(new Hanabi(SCREEN_W/4 +200,SCREEN_H-20,0,-800,3));
+
+    hana.push(
+             new Hana(SCREEN_W/5,SCREEN_H-20,10, -500,4));
+             hana.push(
+             new Hana(SCREEN_W/2,SCREEN_H-20,10, -500,4));
+             hana.push(
+             new Hana(SCREEN_W-300,SCREEN_H-20,10, -500,4));
+
+    hanabi.push(
+             new Hanabi(SCREEN_W/2,SCREEN_H,0, -850,4));
+
+             hanabi.push(
+             new Hanabi(SCREEN_W/2,SCREEN_H,0, -1100,4));
+             hanabi.push(
+             new Hanabi(SCREEN_W/3,SCREEN_H,0, -800,4));
+             hanabi.push(
+             new Hanabi(SCREEN_W-200,SCREEN_H,0, -1100,4));
+             hanabi.push(
+             new Hanabi(SCREEN_W/6,SCREEN_H,0, -900,4));
+
+
+}
+
+</script>
+</body>
+</html>
